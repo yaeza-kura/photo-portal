@@ -2,14 +2,18 @@
 
 VRChat ワールド「フォトポータル」のポータルセレクターが読み込む掲載リストとサムネを、GitHub Pages で公開するリポジトリ。
 
-ワールドが読むのは次の2ファイルだけ。URL は固定で、中身だけが更新される。
+掲載リストはタブごとに分かれていて、JSON もサムネも完全に別ファイル。
 
-- `https://<ユーザー名>.github.io/<リポジトリ名>/worlds.json`
-- `https://<ユーザー名>.github.io/<リポジトリ名>/thumbs.jpg`
+| タブ | 元データ | ワールドが読むファイル |
+| --- | --- | --- |
+| 写真ギャラリー | `data/gallery.json` | `https://yaeza-kura.github.io/photo-portal/gallery/worlds.json` と `thumbs.jpg` |
+| 撮影スポット | `data/spot.json` | `https://yaeza-kura.github.io/photo-portal/spot/worlds.json` と `thumbs.jpg` |
+
+URL は固定で、中身だけが更新される。`data/` に `<名前>.json` を足すと `/<名前>/` が増える（ワールド側にもタブを足す必要がある）。
 
 ## 掲載の追加・取り下げ
 
-`data/worlds-source.json` の `items` を編集して `main` に push するだけ。GitHub Actions が VRChat からサムネを取り直し、2ファイルを作り直して公開する。ワールドの再アップロードはいらない。
+`data/` の各リストの `items` を編集して `main` に push するだけ。GitHub Actions が VRChat からサムネを取り直し、2ファイルを作り直して公開する。ワールドの再アップロードはいらない。
 
 最低限はこれだけ。
 
@@ -26,12 +30,10 @@ VRChat ワールド「フォトポータル」のポータルセレクターが�
 | `description` | 詳細画面の紹介文 | VRChat の説明文（120文字まで） |
 | `publishedAt` | 公開日（`2026-10-07` の形） | VRChat の公開日。一度も公開していなければ最初のアップロード日 |
 | `thumbUrl` | サムネ画像の URL | VRChat のサムネ |
-| `category` | ジャンル（今は使っていない） | なし |
 
 `_memo` のように `_` で始まる項目は、メモ用として無視される。
 
 - 並び順は `items` の順番どおり
-- ジャンルの絞り込みは今は使っていない。使うときはワールド側のプレハブで `showCategoryTabs` をオンにすると、`category` に出てきた順にタブが自動で作られる（「全部」を含めて最大8個）
 - 取り下げは、その項目を消すだけ
 
 ## 自動で飛ばされるもの
@@ -41,7 +43,7 @@ Actions のログに警告が出る。
 - `worldId` の形式が違う
 - 同じワールドの重複
 - 非公開ワールド（ほかの人がポータルから入れないため。確認用にあえて載せるときは `"allowPrivate": true`）
-- 112件を超えた分（アトラス 2048×2048 に入る上限）
+- 1つのリストで112件を超えた分（アトラス 2048×2048 に入る上限）
 
 ## 手元で試す
 
@@ -50,7 +52,7 @@ pip install pillow
 python scripts/build.py
 ```
 
-`public/` に `worlds.json` と `thumbs.jpg` ができる。
+`public/<名前>/` に `worlds.json` と `thumbs.jpg` ができる。
 
 ## 定期更新
 

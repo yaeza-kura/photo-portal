@@ -1,0 +1,13 @@
+{
+  "items": [
+    {
+      "worldId": "wrld_af4e67ae-bb39-48c1-acc9-ab98cd59c5d5",
+      "_memo": "神隠シンドローム -SpiritedAway Syndrome-（Atto_あっと）"
+    },
+    {
+      "worldId": "wrld_cdae9754-0518-42d9-bdae-6aae876112b3",
+      "allowPrivate": true,
+      "_memo": "Nanase Sunset Salon。動作確認用。非公開ワールドなので本番前に消す"
+    }
+  ]
+}

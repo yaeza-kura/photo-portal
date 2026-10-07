@@ -1,8 +1,8 @@
 """
 ポータルセレクター用のデータを作る。
 
-data/worlds-source.json（承認済みの掲載リスト）を読み、VRChat API から各ワールドのサムネを取ってアトラスにまとめ、
-public/worlds.json と public/thumbs.jpg を書き出す。GitHub Actions から呼ばれるが、手元でもそのまま動く。
+data/ にある掲載リスト（<名前>.json）ごとに、VRChat API から各ワールドのサムネを取ってアトラスにまとめ、
+public/<名前>/worlds.json と public/<名前>/thumbs.jpg を書き出す。GitHub Actions から呼ばれるが、手元でもそのまま動く。
 
     python scripts/build.py
 """
@@ -20,7 +20,7 @@ from pathlib import Path
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parent.parent
-SOURCE = ROOT / "data" / "worlds-source.json"
+DATA_DIR = ROOT / "data"
 OUT_DIR = ROOT / "public"
 
 FORMAT_VERSION = 1
@@ -111,8 +111,18 @@ def warn(message: str) -> None:
 
 
 def main() -> int:
-    source = json.loads(SOURCE.read_text(encoding="utf-8"))
-    entries = source.get("items", [])
+    sources = sorted(DATA_DIR.glob("*.json"))
+    for source in sources:
+        build_source(source)
+    print(f"\n{len(sources)} 個のリストを書き出しました（警告 {len(warnings)} 件）")
+    return 0
+
+
+def build_source(source: Path) -> None:
+    name = source.stem
+    print(f"== {name}")
+    entries = json.loads(source.read_text(encoding="utf-8")).get("items", [])
+    out_dir = OUT_DIR / name
 
     items = []
     thumbs = []
@@ -145,28 +155,25 @@ def main() -> int:
             "title": entry.get("title") or info.get("name") or world_id,
             "author": entry.get("author") or info.get("authorName") or "",
             "description": entry.get("description") or shorten(info.get("description", "")),
-            "category": entry.get("category", ""),
             "publishedAt": entry.get("publishedAt") or published_date(info),
             "thumbIndex": len(thumbs),
         })
         thumbs.append(thumb)
         print(f"ok  {world_id}  {items[-1]['title']}")
 
-    OUT_DIR.mkdir(exist_ok=True)
-    write_atlas(thumbs)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    write_atlas(thumbs, out_dir)
     data = {
         "version": FORMAT_VERSION,
         "updatedAt": datetime.now(JST).replace(microsecond=0).isoformat(),
         "thumb": {"width": THUMB_W, "height": THUMB_H, "cols": COLS},
         "items": items,
     }
-    (OUT_DIR / "worlds.json").write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-
-    print(f"\n{len(items)} 件を書き出しました（警告 {len(warnings)} 件）")
-    return 0
+    (out_dir / "worlds.json").write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    print(f"{len(items)} 件")
 
 
-def write_atlas(thumbs: list[Image.Image]) -> None:
+def write_atlas(thumbs: list[Image.Image], out_dir: Path) -> None:
     rows = max(1, (len(thumbs) + COLS - 1) // COLS)
     atlas = Image.new("RGB", (THUMB_W * COLS, THUMB_H * rows), (0, 0, 0))
     for i, thumb in enumerate(thumbs):
@@ -178,7 +185,7 @@ def write_atlas(thumbs: list[Image.Image]) -> None:
         atlas.save(buffer, "JPEG", quality=quality, optimize=True, progressive=False)
         if buffer.tell() <= MAX_JPEG_BYTES:
             break
-    (OUT_DIR / "thumbs.jpg").write_bytes(buffer.getvalue())
+    (out_dir / "thumbs.jpg").write_bytes(buffer.getvalue())
     print(f"thumbs.jpg  {atlas.width}×{atlas.height}  品質 {quality}  {buffer.tell() // 1024} KB")
 
 
