@@ -28,6 +28,7 @@ THUMB_W, THUMB_H, COLS = 256, 144, 8
 MAX_ATLAS = 2048
 MAX_ITEMS = COLS * (MAX_ATLAS // THUMB_H)  # 8 × 14 = 112
 MAX_JPEG_BYTES = 1_000_000
+MAX_DESCRIPTION = 120  # 詳細画面の紹介文欄に収まる文字数
 
 WORLD_ID = re.compile(r"^wrld_[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
 API = "https://api.vrchat.cloud/api/1/worlds/"
@@ -78,6 +79,25 @@ def fit_16_9(image: Image.Image) -> Image.Image:
     return image.resize((THUMB_W, THUMB_H), Image.LANCZOS)
 
 
+def shorten(text: str) -> str:
+    """VRChat の説明文を詳細画面に収まる長さにする"""
+    text = " ".join(text.split())
+    return text if len(text) <= MAX_DESCRIPTION else text[: MAX_DESCRIPTION - 1] + "…"
+
+
+def published_date(info: dict) -> str:
+    """公開日（YYYY-MM-DD、日本時間）。一度も公開していなければ最初のアップロード日"""
+    for key in ("publicationDate", "labsPublicationDate", "created_at"):
+        value = info.get(key)
+        if not value or value == "none":
+            continue
+        try:
+            return datetime.fromisoformat(value.replace("Z", "+00:00")).astimezone(JST).date().isoformat()
+        except ValueError:
+            continue
+    return ""
+
+
 def placeholder() -> Image.Image:
     return Image.new("RGB", (THUMB_W, THUMB_H), (38, 40, 50))
 
@@ -124,8 +144,9 @@ def main() -> int:
             "worldId": world_id,
             "title": entry.get("title") or info.get("name") or world_id,
             "author": entry.get("author") or info.get("authorName") or "",
-            "description": entry.get("description", ""),
+            "description": entry.get("description") or shorten(info.get("description", "")),
             "category": entry.get("category", ""),
+            "publishedAt": entry.get("publishedAt") or published_date(info),
             "thumbIndex": len(thumbs),
         })
         thumbs.append(thumb)

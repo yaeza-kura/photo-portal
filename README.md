@@ -11,20 +11,27 @@ VRChat ワールド「フォトポータル」のポータルセレクターが�
 
 `data/worlds-source.json` の `items` を編集して `main` に push するだけ。GitHub Actions が VRChat からサムネを取り直し、2ファイルを作り直して公開する。ワールドの再アップロードはいらない。
 
+最低限はこれだけ。
+
 ```json
-{
-  "worldId": "wrld_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-  "title": "ワールド名（省略すると VRChat 上の名前）",
-  "author": "作者名（省略すると VRChat 上の作者名）",
-  "description": "紹介文（1〜2行）",
-  "category": "個人展示"
-}
+{ "worldId": "wrld_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx", "category": "個人展示" }
 ```
+
+ほかの項目は、書かなければ VRChat のワールドページから自動で入る。書けばそちらが優先される。
+
+| 項目 | 内容 | 書かなかったとき |
+| --- | --- | --- |
+| `title` | ワールド名 | VRChat 上の名前 |
+| `author` | 作者名 | VRChat 上の作者名 |
+| `description` | 詳細画面の紹介文 | VRChat の説明文（120文字まで） |
+| `publishedAt` | 公開日（`2026-10-07` の形） | VRChat の公開日。一度も公開していなければ最初のアップロード日 |
+| `thumbUrl` | サムネ画像の URL | VRChat のサムネ |
+
+`_memo` のように `_` で始まる項目は、メモ用として無視される。
 
 - 並び順は `items` の順番どおり
 - カテゴリは自由に書いてよい。ワールド側のタブは、出てきた順に自動で作られる（「全部」を含めて最大8個）
 - 取り下げは、その項目を消すだけ
-- サムネを差し替えたいときは `"thumbUrl": "https://..."` を足す
 
 ## 自動で飛ばされるもの
 
