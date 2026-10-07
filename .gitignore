@@ -1,0 +1,3 @@
+# public/ は GitHub Actions が毎回作り直すので入れない
+public/
+__pycache__/
